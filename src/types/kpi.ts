@@ -21,4 +21,9 @@ export interface DashboardResponse {
   exceptions: ExceptionsSummary;
   facilityHeadroomCents: number;
   facilityLimitCents: number;
+  sixMonthGrossTrend?: {
+    labels: string[];
+    series: { name: string; color: string; values: number[] }[];
+  };
+  departmentContributions?: { name: string; revenue: number; costs: number; net: number }[];
 }
