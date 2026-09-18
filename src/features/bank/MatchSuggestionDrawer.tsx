@@ -1,0 +1,18 @@
+import { useEffect,useState } from 'react';
+import { Drawer } from '../../components/ui/Drawer';
+import { BankTransaction } from '../../types/bank';
+import { getSuggestedMatchesApi,allocateBankTransactionApi,parkBankTransactionApi } from '../../api/bank';
+import { getAccountsApi } from '../../api/gl';
+import { useResource } from '../../hooks/useResource';
+import { LoadState,Confidence,dollars } from '../../components/ui/Desk';
+export function MatchSuggestionDrawer({isOpen,onClose,transaction,onSuccess,onOpenSplit}:{isOpen:boolean;onClose:()=>void;transaction:BankTransaction|null;onSuccess:()=>void;onOpenSplit:(t:BankTransaction)=>void}) {
+  const [account,setAccount]=useState('');const [reason,setReason]=useState('');const [busy,setBusy]=useState(false);const [error,setError]=useState('');
+  const resource=useResource(async()=>{if(!isOpen||!transaction)return {matches:[],accounts:[]};const [m,a]=await Promise.all([getSuggestedMatchesApi(transaction._id),getAccountsApi()]);return {matches:m.matches,accounts:a.accounts};},[isOpen,transaction?._id]);
+  useEffect(()=>{setError('');setReason('');setAccount('');},[transaction?._id]);
+  if(!transaction)return null;
+  const txn=transaction;
+  const locked=txn.status==='matched'||txn.status==='split';
+  async function accept(match?:any){if(!account){setError('Choose the GL account for this allocation.');return;}setBusy(true);setError('');try{await allocateBankTransactionApi(txn._id,{allocations:[{amountCents:Math.abs(txn.amountCents),accountId:account,dealId:match?.details?.dealId,vin:match?.details?.vin,note:match?'Matched to '+match.description:'Manual allocation'}]});onSuccess();onClose();}catch(e:any){setError(e.response?.data?.error||e.message);}finally{setBusy(false);}}
+  async function park(){setBusy(true);setError('');try{await parkBankTransactionApi(txn._id,reason);onSuccess();onClose();}catch(e:any){setError(e.response?.data?.error||e.message);}finally{setBusy(false);}}
+  return <Drawer isOpen={isOpen} onClose={onClose} title="Match & allocate bank transaction" subtitle={txn.description} width="lg"><div className="summary-row"><span>{new Date(txn.date).toLocaleDateString('en-AU')}</span><b>{dollars(txn.amountCents,2)}</b></div><LoadState loading={resource.loading} error={resource.error||error} retry={resource.refresh}/>{locked?<p className="section-spacer">This transaction is already {txn.status}.</p>:<><div className="form-fields"><label>Allocation account<select value={account} onChange={e=>setAccount(e.target.value)}><option value="">Select general ledger account</option>{resource.data?.accounts.map(a=><option key={a._id} value={a._id}>{a.code} · {a.name}</option>)}</select></label></div>{resource.data?.matches.map((m,index)=><article className="side-section" key={index}><div className="summary-row"><strong>{m.description}</strong><Confidence value={m.score}/></div><button className="desk-button section-spacer" disabled={busy||!account} onClick={()=>accept(m)}>Accept match</button></article>)}{resource.data&&!resource.data.matches.length&&<p className="chart-note section-spacer">No suggested matches. Choose an account to allocate manually, or split the transaction.</p>}<div className="actions section-spacer"><button className="desk-button primary" disabled={busy||!account} onClick={()=>accept()}>Allocate manually</button><button className="desk-button" disabled={busy} onClick={()=>onOpenSplit(txn)}>Split allocation</button></div><div className="form-fields"><label>Reason for parking<input value={reason} onChange={e=>setReason(e.target.value)}/></label><button className="desk-button" disabled={busy||!reason.trim()} onClick={park}>Park transaction</button></div></>}</Drawer>;
+}

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React App Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: white;
+            padding: 40px;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+        }
+        h1 { color: #38bdf8; margin-top: 0; }
+        .test-item {
+            background: #0f172a;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 3px solid #38bdf8;
+        }
+        .success { border-left-color: #10b981; }
+        .error { border-left-color: #ef4444; }
+        button {
+            background: linear-gradient(to right, #0ea5e9, #2563eb);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 5px 10px 0;
+        }
+        button:hover { opacity: 0.9; }
+        pre {
+            background: #020617;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Dandenong Hyundai Dashboard - Diagnostic Test</h1>
+        
+        <div class="test-item">
+            <strong>Current URL:</strong> <span id="current-url"></span>
+        </div>
+
+        <div class="test-item">
+            <strong>Local Storage Token:</strong> <span id="token-status"></span>
+        </div>
+
+        <div class="test-item">
+            <strong>Local Storage User:</strong> <span id="user-status"></span>
+        </div>
+
+        <div class="test-item">
+            <strong>Backend Status (Port 5000):</strong> <span id="backend-status">Testing...</span>
+        </div>
+
+        <div class="test-item">
+            <strong>Frontend Status (Port 5173):</strong> <span style="color: #10b981;">✓ Active (you're here)</span>
+        </div>
+
+        <h2>Actions</h2>
+        <button onclick="clearAuth()">Clear Authentication</button>
+        <button onclick="testBackend()">Test Backend API</button>
+        <button onclick="goToMain()">Go to Main App</button>
+        <button onclick="goToLogin()">Go to Login</button>
+
+        <h2>Console Output</h2>
+        <pre id="console-output">Waiting for actions...</pre>
+    </div>
+
+    <script>
+        // Display current state
+        document.getElementById('current-url').textContent = window.location.href;
+        
+        const token = localStorage.getItem('token');
+        const user = localStorage.getItem('user');
+        
+        document.getElementById('token-status').textContent = token ? '✓ Present' : '✗ Missing';
+        document.getElementById('token-status').style.color = token ? '#10b981' : '#ef4444';
+        
+        document.getElementById('user-status').textContent = user ? `✓ ${JSON.parse(user).name || 'Present'}` : '✗ Missing';
+        document.getElementById('user-status').style.color = user ? '#10b981' : '#ef4444';
+
+        function log(message) {
+            const output = document.getElementById('console-output');
+            output.textContent += '\n' + new Date().toLocaleTimeString() + ' - ' + message;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clearAuth() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            log('✓ Cleared authentication tokens');
+            setTimeout(() => location.reload(), 500);
+        }
+
+        async function testBackend() {
+            log('Testing backend connection to http://localhost:5000/api...');
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token') || 'none'}`
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✓ Backend connected! User: ${data.user?.name || 'Unknown'}`);
+                    document.getElementById('backend-status').textContent = '✓ Connected';
+                    document.getElementById('backend-status').style.color = '#10b981';
+                } else {
+                    log(`✗ Backend responded with status: ${response.status}`);
+                    document.getElementById('backend-status').textContent = `✗ Error ${response.status}`;
+                    document.getElementById('backend-status').style.color = '#ef4444';
+                }
+            } catch (error) {
+                log(`✗ Backend error: ${error.message}`);
+                document.getElementById('backend-status').textContent = '✗ Cannot connect';
+                document.getElementById('backend-status').style.color = '#ef4444';
+            }
+        }
+
+        function goToMain() {
+            log('Navigating to main app...');
+            window.location.href = '/';
+        }
+
+        function goToLogin() {
+            log('Navigating to login...');
+            window.location.href = '/#/login';
+        }
+
+        // Auto-test backend on load
+        testBackend();
+    </script>
+</body>
+</html>

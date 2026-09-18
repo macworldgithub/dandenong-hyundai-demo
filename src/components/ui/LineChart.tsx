@@ -1,0 +1,12 @@
+import { useId, useState } from 'react';
+export type ChartSeries = { name: string; color: string; values: number[] };
+export function LineChart({ labels, series, area = false, emptyMessage }: { labels: string[]; series: ChartSeries[]; area?: boolean; emptyMessage?: string }) {
+  const [isolated,setIsolated]=useState<string|null>(null);
+  const id=useId().replace(/:/g,'');
+  const visible=isolated?series.filter(s=>s.name===isolated):series;
+  const numbers=visible.flatMap(s=>s.values).filter(Number.isFinite);
+  const min=Math.min(0,...numbers); const max=Math.max(1,...numbers); const span=max-min;
+  const y=(n:number)=>235-(n-min)/span*210;
+  const x=(i:number)=>36+i*594/Math.max(1,labels.length-1);
+  return <><div className="chart-legend">{series.map(s=><button key={s.name} aria-pressed={isolated===s.name} onClick={()=>setIsolated(isolated===s.name?null:s.name)} style={{opacity:isolated&&isolated!==s.name?0.4:1}}><i style={{background:s.color}}/>{s.name}</button>)}</div><svg className="chart" viewBox="0 0 650 260" role="img" aria-label={emptyMessage || series.map(s=>s.name+': '+s.values.map((v,i)=>Number.isFinite(v)?(labels[i]||'')+' '+v.toFixed(1):'').filter(Boolean).join(', ')).join('; ')}><defs><linearGradient id={id} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2936ff" stopOpacity=".09"/><stop offset="100%" stopColor="#2936ff" stopOpacity="0"/></linearGradient></defs>{[0,.25,.5,.75,1].map(t=><g key={t}><line x1="36" x2="630" y1={y(min+span*t)} y2={y(min+span*t)} stroke={t===0?'#777':'#e2e2de'} strokeWidth=".8"/><text x="29" y={y(min+span*t)+3} textAnchor="end">{(min+span*t).toLocaleString('en-AU',{maximumFractionDigits:span<10?2:0})}</text></g>)}{labels.map((label,index)=><text key={index} x={x(index)} y="251" textAnchor="middle">{label}</text>)}{!emptyMessage&&visible.map(s=><g key={s.name}>{area&&<polygon points={`36,235 ${s.values.map((v,i)=>Number.isFinite(v)?x(i)+','+y(v):'').filter(Boolean).join(' ')} ${x(s.values.length-1)},235`} fill={`url(#${id})`}/>}<polyline fill="none" stroke={s.color} strokeWidth={area?1.8:1.2} points={s.values.map((v,i)=>Number.isFinite(v)?x(i)+','+y(v):'').filter(Boolean).join(' ')}/>{s.values.map((v,i)=>Number.isFinite(v)&&<circle key={i} cx={x(i)} cy={y(v)} r="3" fill={s.color} opacity={s.values.filter(Number.isFinite).length===1?1:0}><title>{s.name} · {labels[i]}: {v.toLocaleString()}</title></circle>)}</g>)}{emptyMessage&&<text x="333" y="125" textAnchor="middle">{emptyMessage}</text>}</svg></>;
+}
