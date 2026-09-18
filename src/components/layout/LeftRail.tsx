@@ -40,7 +40,7 @@ export function LeftRail({
       title: "Command",
       items: [
         { label: "CFO Command Centre", icon: Gauge, to: "/" },
-        { label: "Natural Language Query", icon: MessageSquare },
+        // { label: "Natural Language Query", icon: MessageSquare },
       ],
     },
     {
@@ -53,30 +53,30 @@ export function LeftRail({
           to: "/ap",
           count: openApExceptionsCount,
         },
-        { label: "Accounts Receivable", icon: FileText },
+        // { label: "Accounts Receivable", icon: FileText },
         { label: "Inventory & Floorplan", icon: Boxes, to: "/inventory" },
-        { label: "Parts & Service", icon: Wrench },
+        // { label: "Parts & Service", icon: Wrench },
       ],
     },
     {
       title: "Group",
       items: [
-        { label: "Consolidation", icon: Building2 },
+        // { label: "Consolidation", icon: Building2 },
         { label: "Cash & Treasury", icon: Landmark, to: "/bank" },
       ],
     },
-    {
-      title: "Intelligence",
-      items: [
-        { label: "AI Automation Layer", icon: Activity },
-        { label: "Continuous Close", icon: CalendarDays },
-        { label: "Reports & Analytics", icon: ScrollText },
-      ],
-    },
-    {
-      title: "Control",
-      items: [{ label: "Compliance & Audit", icon: ShieldCheck }],
-    },
+    // {
+    //   title: "Intelligence",
+    //   items: [
+    //     { label: "AI Automation Layer", icon: Activity },
+    //     { label: "Continuous Close", icon: CalendarDays },
+    //     { label: "Reports & Analytics", icon: ScrollText },
+    //   ],
+    // },
+    // {
+    //   title: "Control",
+    //   items: [{ label: "Compliance & Audit", icon: ShieldCheck }],
+    // },
   ];
   return (
     <aside className="left-rail">
