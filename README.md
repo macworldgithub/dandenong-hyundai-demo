@@ -14,7 +14,9 @@ The development server runs on http://localhost:5173 and proxies `/api` to
 http://localhost:5000. Start the existing sibling backend separately. Set
 `VITE_API_URL` when using a different API host; see `.env.example`.
 
-Demo sign-in: `sarah@dandenonghyundai.com.au` / `demo1234`.
+Create an account at `/signup`, choosing either Dealership or Admin. Login
+requires the same role selected during signup. Password recovery is available
+at `/forgot-password`.
 
 ## Screens
 
@@ -48,7 +50,8 @@ Successful mutations refresh the shell's exception counts and close readiness.
 
 ## Available data
 
-The interface uses backend values rather than hard-coded screenshot totals.
+The interface uses backend values. The Contribution by Department presentation
+dataset is intentionally fixed in the backend dashboard response.
 The current backend exposes only its active accounting period. Earlier gross
 trend months remain unplotted; prior-period variance narratives are unavailable.
 
@@ -69,8 +72,8 @@ to generate a bank file.
 `npm run build` runs TypeScript checking and the production Vite build.
 
 `node scripts/ui-smoke.mjs` runs read-only browser checks against the local
-application and API. It uses installed Chrome on Windows, signs into the
-seeded demo account, captures the five screens, checks API read adapters,
+application and API. It uses installed Chrome on Windows, captures the five
+screens, checks API read adapters,
 exercises filters and drawers, and checks mobile layouts. Results and
 screenshots are written to the ignored `test-artifacts/` directory.
 

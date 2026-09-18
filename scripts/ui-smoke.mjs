@@ -20,7 +20,7 @@ try {
  await send('Runtime.enable');await send('Page.enable');
  await send('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
  await send('Page.navigate',{url:'http://localhost:5173/login'});await delay(1200);
- const login=await evaluate("(async()=>{const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'sarah@dandenonghyundai.com.au',password:'demo1234'})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Login failed');localStorage.setItem('token',d.token);localStorage.setItem('user',JSON.stringify(d.user));return {ok:r.ok};})()");
+ const login=await evaluate("(async()=>{const credentials={email:'ui-smoke@dandenonghyundai.test',password:'ui-smoke-password',role:'dealership'};await fetch('/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...credentials,name:'UI Smoke Test'})});const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(credentials)});const d=await r.json();if(!r.ok)throw new Error(d.error||'Login failed');localStorage.setItem('token',d.token);localStorage.setItem('user',JSON.stringify(d.user));return {ok:r.ok};})()");
  console.log('Demo authentication',login);
  const report=[];
  for(const route of ['/','/ap','/bank','/inventory','/gl']){

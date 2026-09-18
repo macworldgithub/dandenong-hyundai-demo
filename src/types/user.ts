@@ -1,4 +1,4 @@
-export type UserRole = 'controller' | 'ap_clerk' | 'accountant' | 'admin';
+export type UserRole = 'dealership' | 'admin';
 
 export interface User {
   _id: string;
@@ -12,5 +12,10 @@ export interface User {
 
 export interface AuthResponse {
   token: string;
+  user: User;
+}
+
+export interface SignupResponse {
+  message: string;
   user: User;
 }
