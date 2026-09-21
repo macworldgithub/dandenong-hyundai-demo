@@ -18,9 +18,19 @@ export async function signupApi(payload: {
 
 export async function forgotPasswordApi(email: string, role: UserRole): Promise<{
   message: string;
-  resetToken?: string;
+  requestId: string;
 }> {
   const { data } = await client.post('/auth/forgot-password', { email, role });
+  return data;
+}
+
+export async function resendPasswordOtpApi(email: string, role: UserRole): Promise<{ message: string; requestId: string }> {
+  const { data } = await client.post('/auth/forgot-password/resend', { email, role });
+  return data;
+}
+
+export async function verifyPasswordOtpApi(requestId: string, otp: string): Promise<{ message: string; resetToken: string }> {
+  const { data } = await client.post('/auth/forgot-password/verify', { requestId, otp });
   return data;
 }
 

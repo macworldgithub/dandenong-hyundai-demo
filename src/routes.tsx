@@ -5,6 +5,8 @@ import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { LoginPage } from './features/auth/LoginPage';
 import { SignupPage } from './features/auth/SignupPage';
 import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage';
+import { OtpVerificationPage } from './features/auth/OtpVerificationPage';
+import { ResetPasswordPage } from './features/auth/ResetPasswordPage';
 import { CommandCentre } from './features/dashboard/CommandCentre';
 import { BankPage } from './features/bank/BankPage';
 import { ApPage } from './features/ap/ApPage';
@@ -20,6 +22,8 @@ export const AppRoutes: React.FC = () => {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/verify-reset-otp" element={<OtpVerificationPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* Protected Rooftop Routes */}
       <Route element={<ProtectedRoute />}>
