@@ -1,7 +1,13 @@
 import axios, { AxiosError } from 'axios';
 
+const apiBaseUrl = (import.meta.env.VITE_API_URL || '').trim();
+
+if (!apiBaseUrl) {
+  throw new Error('VITE_API_URL is required. Add it to the frontend environment configuration.');
+}
+
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: apiBaseUrl.replace(/\/$/, ''),
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',

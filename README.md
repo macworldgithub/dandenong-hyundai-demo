@@ -10,9 +10,9 @@ npm run dev
 npm run build
 ```
 
-The development server runs on http://localhost:5173 and proxies `/api` to
-http://localhost:5000. Start the existing sibling backend separately. Set
-`VITE_API_URL` when using a different API host; see `.env.example`.
+The development server uses the backend configured by `VITE_API_URL`; see
+`.env.example`. The value must include the `/api` prefix. Restart Vite after
+changing an environment variable.
 
 Create an account at `/signup`, choosing either Dealership or Admin. Login
 requires the same role selected during signup. Password recovery is available
