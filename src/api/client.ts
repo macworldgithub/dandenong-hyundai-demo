@@ -1,10 +1,7 @@
 import axios, { AxiosError } from 'axios';
 
-const apiBaseUrl = (import.meta.env.VITE_API_URL || '').trim();
-
-if (!apiBaseUrl) {
-  throw new Error('VITE_API_URL is required. Add it to the frontend environment configuration.');
-}
+const DEFAULT_API_BASE_URL = 'https://dandenong-hyundai-demo-backend.vercel.app/api';
+const apiBaseUrl = (import.meta.env.VITE_API_URL || DEFAULT_API_BASE_URL).trim();
 
 const client = axios.create({
   baseURL: apiBaseUrl.replace(/\/$/, ''),
