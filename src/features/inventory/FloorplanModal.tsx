@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '../../components/ui/Table';
@@ -7,6 +7,7 @@ import { getFloorplanApi } from '../../api/inventory';
 import { FloorplanDraw } from '../../types/inventory';
 import { formatAUD } from '../../lib/money';
 import { formatDate } from '../../lib/dates';
+import { Pagination } from '../../components/ui/Pagination';
 
 interface FloorplanModalProps {
   isOpen: boolean;
@@ -136,14 +137,11 @@ export const FloorplanModal: React.FC<FloorplanModalProps> = ({ isOpen, onClose 
                 {total > PAGE_SIZE ? ` · Page ${page} of ${totalPages}` : ''}
               </span>
               {total > PAGE_SIZE && (
-                <>
-                  <button className="desk-button" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                    Previous
-                  </button>
-                  <button className="desk-button" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-                    Next
-                  </button>
-                </>
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                />
               )}
             </div>
           </div>

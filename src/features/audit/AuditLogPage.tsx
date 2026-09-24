@@ -22,6 +22,7 @@ import { getAuditLogsApi, getAuditFiltersApi } from "../../api/audit";
 import { useResource } from "../../hooks/useResource";
 import { AuditLogEntry } from "../../types/audit";
 import { formatDateTime } from "../../lib/dates";
+import { Pagination } from "../../components/ui/Pagination";
 
 export const AuditLogPage: React.FC = () => {
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
@@ -276,28 +277,16 @@ export const AuditLogPage: React.FC = () => {
 
         {/* Pagination Footer */}
         {!error && totalPages > 1 && (
-          <div className="p-3 border-t border-[#deded9] flex items-center justify-between text-xs text-[#858580] bg-[#f6f6f3]">
+          <div className="p-3 border-t border-[#deded9] flex items-center justify-between text-xs text-[#858580] bg-[#f6f6f3] flex-wrap gap-3">
             <span>
               Page {page} of {totalPages}
             </span>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="xs"
-                disabled={isLoading || page <= 1}
-                onClick={() => setPage(page - 1)}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="xs"
-                disabled={isLoading || page >= totalPages}
-                onClick={() => setPage(page + 1)}
-              >
-                Next
-              </Button>
-            </div>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              disabled={isLoading}
+            />
           </div>
         )}
       </Card>

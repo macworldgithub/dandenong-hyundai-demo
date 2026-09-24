@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useResource } from '../../hooks/useResource';
 import { allPages } from '../../api/pagination';
 import { getVehiclesApi, getDealsApi, getInventoryStatsApi } from '../../api/inventory';
@@ -9,6 +9,7 @@ import { VinCardModal } from './VinCardModal';
 import { DealJacketModal } from './DealJacketModal';
 import { AddCostLineModal } from './AddCostLineModal';
 import { FloorplanModal } from './FloorplanModal';
+import { Pagination } from '../../components/ui/Pagination';
 
 const PAGE_SIZE = 15;
 
@@ -42,12 +43,12 @@ function PaginationControls({
       <span>
         Showing {start}-{end} of {total} · Page {page} of {totalPages}
       </span>
-      <button className="desk-button" disabled={loading || page <= 1} onClick={() => onPageChange(page - 1)}>
-        Previous
-      </button>
-      <button className="desk-button" disabled={loading || page >= totalPages} onClick={() => onPageChange(page + 1)}>
-        Next
-      </button>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+        disabled={loading}
+      />
     </div>
   );
 }

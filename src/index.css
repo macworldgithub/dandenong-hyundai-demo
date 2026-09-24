@@ -110,7 +110,17 @@ h1, h2, h3, p { margin: 0; }
 .load-state { padding: 28px 12px; color: #858580; font-size: 11px; text-align: center; border: 1px solid #e3e3df; }
 .load-state[role=alert] { border-color: #e5aaa5; color: #b92b24; background: #fcf4f2; }
 .load-state button { display: block; margin: 10px auto 0; color: #2936ff; text-decoration: underline; }
-.pagination { display: flex; align-items: center; justify-content: flex-end; gap: 15px; margin-top: 17px; font-size: 10px; color: #858580; }
+.pagination { display: flex; align-items: center; justify-content: flex-end; gap: 16px; margin-top: 17px; font-size: 11px; color: #858580; flex-wrap: wrap; }
+.desk-pagination-bar { display: inline-flex; align-items: center; gap: 4px; font-family: inherit; }
+.desk-page-numbers { display: inline-flex; align-items: center; gap: 4px; }
+.desk-page-btn { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px; padding: 0 8px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #dcdcd7; background: #ffffff; color: #444440; cursor: pointer; transition: all 0.15s ease; user-select: none; }
+.desk-page-btn:hover:not(:disabled) { border-color: #666660; color: #111111; background: #f0f0ec; }
+.desk-page-btn:disabled { opacity: 0.35; cursor: not-allowed; border-color: #e5e5e0; background: #fbfbf9; color: #a0a09c; }
+.desk-page-btn.is-active { background: #333330; border-color: #333330; color: #ffffff; font-weight: 700; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
+.desk-page-btn.is-active:hover { background: #222220; border-color: #222220; }
+.desk-page-nav { gap: 5px; padding: 0 10px; font-size: 9px; letter-spacing: 0.8px; font-weight: 600; }
+.desk-page-ellipsis { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 28px; color: #858580; font-weight: bold; letter-spacing: 2px; }
+
 .kpi-strip { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); border-top: 1px solid #555; border-bottom: 1px solid #e0e0dc; margin: 8px 0 26px; }
 .kpi-tile { background: none; border: 0; border-right: 1px solid #e0e0dc; padding: 13px 11px; text-align: left; min-width: 0; }
 .kpi-tile:first-child { border-left: 1px solid #e0e0dc; }.kpi-tile:hover { background: #eeeeff; }
