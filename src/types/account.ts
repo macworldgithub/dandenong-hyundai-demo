@@ -31,6 +31,7 @@ export interface TrialBalanceRow {
 }
 
 export interface TrialBalanceResponse {
+  dataSource?: 'demo' | 'ledger';
   period: Period;
   department?: Department;
   accounts: TrialBalanceRow[];

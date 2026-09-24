@@ -81,10 +81,8 @@ export function InventoryPage() {
   const stock = vehicles.filter((v) => v.status !== 'delivered');
 
   const age = (v: Vehicle) => {
-    const drawn = facility?.activeDraws.find(
-      (d) => (typeof d.vehicleId === 'object' ? d.vehicleId._id : d.vehicleId) === v._id,
-    )?.drawnDate;
-    const date = drawn || v.createdAt;
+    if (v.ageDays !== null && v.ageDays !== undefined) return v.ageDays;
+    const date = v.createdAt;
     return date ? Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)) : null;
   };
 
@@ -101,7 +99,7 @@ export function InventoryPage() {
       vehicles.filter(
         (v) =>
           (filter === 'all' || v.class === filter) &&
-          [v.stockNumber, v.vin, v.make, v.model]
+          [v.stockNumber, v.vin, v.make, v.model, v.csvDescription, v.registrationNumber, v.colour, v.location, v.deal, v.sourceStatus]
             .join(' ')
             .toLowerCase()
             .includes(query.toLowerCase()),
@@ -110,6 +108,12 @@ export function InventoryPage() {
   );
 
   const rowCount = view === 'vehicles' ? visible.length : deals.length;
+  // Choose columns from the complete selected class, not the current page.
+  const classVehicles = vehicles.filter(v => filter === 'all' || v.class === filter);
+  const showRegistration = classVehicles.some(v => !!v.registrationNumber?.trim());
+  const showOdometer = classVehicles.some(v => v.odometerKm !== null && v.odometerKm !== undefined);
+  const showDeal = classVehicles.some(v => !!v.deal?.trim());
+  const showYear = classVehicles.some(v => v.class === 'used');
   const totalPages = Math.max(1, Math.ceil(rowCount / PAGE_SIZE));
   const pageStart = (page - 1) * PAGE_SIZE;
   const pagedVehicles = visible.slice(pageStart, pageStart + PAGE_SIZE);
@@ -173,10 +177,9 @@ export function InventoryPage() {
 
       <div className="section-heading">
         <Eyebrow>Days in stock</Eyebrow>
-        <h2>Aging heat map and forward interest cost</h2>
+        <h2>Inventory aging heat map</h2>
         <p>
-          The 91-120 day band is the decision point. If those units age one more band, forward interest cost rises
-          materially and the curtailment calendar concentrates principal payments into a single fortnight.
+          The age supplied by the stock CSV determines each vehicle's aging band and highlights stock requiring review.
         </p>
       </div>
 
@@ -188,12 +191,6 @@ export function InventoryPage() {
             const days = age(v);
             return days !== null && days >= band.min && days <= band.max;
           });
-          const ids = new Set(rows.map((v) => v._id));
-          const interest =
-            facility?.activeDraws
-              .filter((d) => ids.has(typeof d.vehicleId === 'object' ? d.vehicleId._id : d.vehicleId))
-              .reduce((s, d) => s + d.interestAccruedCents, 0) || 0;
-
           return (
             <div key={band.label} style={{ background: `rgba(174, 45, 35, ${index * 0.023})` }}>
               <label>{band.label}</label>
@@ -202,7 +199,6 @@ export function InventoryPage() {
               <div className="bar">
                 <i style={{ width: `${stock.length ? (rows.length / stock.length) * 100 : 0}%` }} />
               </div>
-              <small className="num">{data ? dollars(interest) : '-'} accrued interest</small>
             </div>
           );
         })}
@@ -222,20 +218,23 @@ export function InventoryPage() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Stock / VIN</th>
+                    <th>Stock no</th>
+                    {showYear && <th>Year</th>}
+                    <th>Carline</th>
                     <th>Description</th>
+                    {showRegistration && <th>Reg no</th>}
+                    {showOdometer && <th>Odometer</th>}
+                    <th>Colour</th>
+                    <th>Loc</th>
                     <th>Days</th>
-                    <th>Cost</th>
-                    <th>Floorplan</th>
-                    <th>Accrued int.</th>
+                    <th>List price</th>
+                    {showDeal && <th>Deal</th>}
                     <th>Status</th>
+                    <th>Open RO/PO</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pagedVehicles.map((v) => {
-                    const draw = facility?.activeDraws.find(
-                      (d) => (typeof d.vehicleId === 'object' ? d.vehicleId._id : d.vehicleId) === v._id,
-                    );
                     const days = age(v);
 
                     return (
@@ -244,21 +243,21 @@ export function InventoryPage() {
                           <button className="text-link num" onClick={() => setVehicle(v)}>
                             {v.stockNumber}
                           </button>
-                          <small className="num">{v.vin}</small>
                         </td>
-                        <td>
-                          {v.make} {v.model}
-                          <small>
-                            {v.year} · {v.class} · {v.variant}
-                          </small>
-                        </td>
+                        {showYear && <td>{v.class === 'used' ? v.year : '-'}</td>}
+                        <td>{v.model}</td>
+                        <td>{v.csvDescription || v.variant || '-'}</td>
+                        {showRegistration && <td className="num">{v.registrationNumber || '-'}</td>}
+                        {showOdometer && <td className="num">{v.odometerKm !== null && v.odometerKm !== undefined ? v.odometerKm.toLocaleString() : '-'}</td>}
+                        <td>{v.colour || '-'}</td>
+                        <td>{v.location || '-'}</td>
                         <td>
                           <Tag tone={days !== null && days > 90 ? 'red' : 'gray'}>{days === null ? '-' : days + 'd'}</Tag>
                         </td>
-                        <td className="num">{dollars(v.totalCostCents)}</td>
-                        <td className="num">{draw ? dollars(draw.drawnAmountCents) : '-'}</td>
-                        <td className="num">{draw ? dollars(draw.interestAccruedCents) : '-'}</td>
-                        <td style={{ fontSize: 10, color: '#858580' }}>{v.status.replace('_', ' ')}</td>
+                        <td className="num">{dollars(v.listPriceCents || 0, 2)}</td>
+                        {showDeal && <td className="num">{v.deal || '-'}</td>}
+                        <td><Tag tone={v.status === 'delivered' ? 'gray' : 'blue'}>{v.sourceStatus || '-'}</Tag></td>
+                        <td>{v.openRoPo || '-'}</td>
                       </tr>
                     );
                   })}
@@ -299,7 +298,7 @@ export function InventoryPage() {
             <input
               className="search-input"
               aria-label="Search stock or VIN"
-              placeholder="Search stock, VIN or model..."
+              placeholder="Search stock, VIN, registration, model, colour or deal..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -308,8 +307,7 @@ export function InventoryPage() {
             </button>
           </div>
           <p className="chart-note">
-            Aging uses the floorplan draw date where available, otherwise the inventory creation date. Interest shown is
-            accrued to date; forward rates and curtailment schedules are not supplied.
+            Aging uses the CSV age value where supplied, otherwise the inventory creation date.
           </p>
         </div>
         <FacilityPanel data={facility || null} />

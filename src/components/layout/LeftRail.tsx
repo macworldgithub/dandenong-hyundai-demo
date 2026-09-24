@@ -29,11 +29,15 @@ export function BrandMark() {
 }
 type Item = { label: string; icon: LucideIcon; to?: string; count?: number };
 export function LeftRail({
+  unmatchedBankCount = 0,
   openApExceptionsCount = 0,
+  openControlRecsCount = 0,
+  inventoryInStockCount = 0,
 }: {
   unmatchedBankCount?: number;
   openApExceptionsCount?: number;
   openControlRecsCount?: number;
+  inventoryInStockCount?: number;
 }) {
   const groups: { title: string; items: Item[] }[] = [
     {
@@ -46,7 +50,7 @@ export function LeftRail({
     {
       title: "Ledgers",
       items: [
-        { label: "General Ledger", icon: BookOpen, to: "/gl" },
+        { label: "General Ledger", icon: BookOpen, to: "/gl", count: openControlRecsCount },
         {
           label: "Accounts Payable",
           icon: Receipt,
@@ -54,7 +58,7 @@ export function LeftRail({
           count: openApExceptionsCount,
         },
         // { label: "Accounts Receivable", icon: FileText },
-        { label: "Inventory & Floorplan", icon: Boxes, to: "/inventory" },
+        { label: "Inventory & Floorplan", icon: Boxes, to: "/inventory", count: inventoryInStockCount },
         // { label: "Parts & Service", icon: Wrench },
       ],
     },
@@ -62,7 +66,8 @@ export function LeftRail({
       title: "Group",
       items: [
         // { label: "Consolidation", icon: Building2 },
-        { label: "Cash & Treasury", icon: Landmark, to: "/bank" },
+        { label: "Cash & Treasury", icon: Landmark, to: "/bank", count: unmatchedBankCount },
+        { label: "Compliance & Audit", icon: ShieldCheck, to: "/audit" },
       ],
     },
     // {

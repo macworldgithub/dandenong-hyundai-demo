@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { History, Search, RefreshCw, Shield, ChevronDown, ChevronRight, User } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '../../components/ui/Table';
-import { getAuditLogsApi } from '../../api/audit';
+import { getAuditLogsApi, getAuditFiltersApi } from '../../api/audit';
+import { useResource } from '../../hooks/useResource';
 import { AuditLogEntry } from '../../types/audit';
 import { formatDateTime } from '../../lib/dates';
 
@@ -14,27 +15,41 @@ export const AuditLogPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [action, setAction] = useState('');
+  const [total, setTotal] = useState(0);
+  const filters = useResource(getAuditFiltersApi);
+  const requestVersion = useRef(0);
 
   const fetchLogs = async () => {
+    const version = ++requestVersion.current;
     setIsLoading(true);
+    setError('');
     try {
       const res = await getAuditLogsApi({
         entityType: entityFilter === 'all' ? undefined : entityFilter,
+        action: action || undefined,
         page,
         limit: 25,
       });
+      if (version !== requestVersion.current) return;
       setLogs(res.logs || []);
+      setTotal(res.total);
+      setExpandedId(null);
       setTotalPages(res.totalPages || 1);
-    } catch (err) {
-      console.error('Failed to load audit logs:', err);
+    } catch (err: any) {
+      if (version !== requestVersion.current) return;
+      setLogs([]);
+      setError(err.response?.data?.error || 'Unable to load audit events. Please retry.');
     } finally {
-      setIsLoading(false);
+      if (version === requestVersion.current) setIsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchLogs();
-  }, [entityFilter, page]);
+    return () => { requestVersion.current++; };
+  }, [entityFilter, action, page]);
 
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
@@ -62,12 +77,21 @@ export const AuditLogPage: React.FC = () => {
         </div>
       </div>
 
+      {(error || filters.error) && <p role="alert" className="text-sm text-red-700">{error || filters.error}</p>}
+      <div className="flex items-center gap-3 text-xs">
+        <label htmlFor="audit-action">Action</label>
+        <select id="audit-action" className="search-input" value={action} onChange={e => { setAction(e.target.value); setPage(1); }}>
+          <option value="">All actions</option>
+          {filters.data?.actions.map(value => <option key={value} value={value}>{value}</option>)}
+        </select>
+        {!isLoading && !error && <span>{total} events</span>}
+      </div>
       {/* Main Table Card */}
       <Card variant="default" className="p-0 overflow-hidden">
         <div className="p-4 border-b border-[#deded9] flex items-center justify-between bg-[#f6f6f3]">
           {/* Filter tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto text-xs">
-            {['all', 'JournalEntry', 'BankTransaction', 'ApInvoice', 'Vehicle', 'DealJacket'].map((type) => (
+            {['all', ...(filters.data?.entityTypes || [])].map((type) => (
               <button
                 key={type}
                 onClick={() => {
@@ -108,7 +132,7 @@ export const AuditLogPage: React.FC = () => {
               logs.map((log) => {
                 const isExpanded = expandedId === log._id;
                 const userName =
-                  typeof log.userId === 'object' ? (log.userId as any)?.name : 'System / Controller';
+                  typeof log.userId === 'object' ? (log.userId as any)?.name || 'Unknown user' : 'System / Controller';
 
                 return (
                   <React.Fragment key={log._id}>
@@ -187,7 +211,7 @@ export const AuditLogPage: React.FC = () => {
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-12 text-xs text-[#858580]">
-                  No audit trail events logged yet.
+                  {error ? 'Audit events could not be loaded.' : 'No audit events match the selected filters.'}
                 </TableCell>
               </TableRow>
             )}
@@ -195,7 +219,7 @@ export const AuditLogPage: React.FC = () => {
         </Table>
 
         {/* Pagination Footer */}
-        {totalPages > 1 && (
+        {!error && totalPages > 1 && (
           <div className="p-3 border-t border-[#deded9] flex items-center justify-between text-xs text-[#858580] bg-[#f6f6f3]">
             <span>
               Page {page} of {totalPages}
@@ -204,7 +228,7 @@ export const AuditLogPage: React.FC = () => {
               <Button
                 variant="outline"
                 size="xs"
-                disabled={page <= 1}
+                disabled={isLoading || page <= 1}
                 onClick={() => setPage(page - 1)}
               >
                 Previous
@@ -212,7 +236,7 @@ export const AuditLogPage: React.FC = () => {
               <Button
                 variant="outline"
                 size="xs"
-                disabled={page >= totalPages}
+                disabled={isLoading || page >= totalPages}
                 onClick={() => setPage(page + 1)}
               >
                 Next

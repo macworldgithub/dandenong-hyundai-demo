@@ -11,12 +11,12 @@ interface FacilityGaugeProps {
 }
 
 export const FacilityGauge: React.FC<FacilityGaugeProps> = ({
-  headroomCents = 580000000, // $5.8M
-  limitCents = 1000000000,    // $10.0M facility limit
+  headroomCents = 0,
+  limitCents = 0,
 }) => {
   const navigate = useNavigate();
   const drawnCents = Math.max(0, limitCents - headroomCents);
-  const utilizationPct = Math.min(100, Math.round((drawnCents / limitCents) * 100));
+  const utilizationPct = limitCents > 0 ? Math.min(100, Math.round((drawnCents / limitCents) * 100)) : 0;
 
   let barColor = 'bg-sky-500';
   if (utilizationPct > 85) barColor = 'bg-rose-500';

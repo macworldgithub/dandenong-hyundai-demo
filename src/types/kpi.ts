@@ -16,11 +16,13 @@ export interface ExceptionsSummary {
 }
 
 export interface DashboardResponse {
+  managementDataSource?: 'demo' | 'ledger';
   periodCode: string;
   kpis: KpiTileData[];
   exceptions: ExceptionsSummary;
   facilityHeadroomCents: number;
   facilityLimitCents: number;
+  inventoryInStockCount: number;
   sixMonthGrossTrend?: {
     labels: string[];
     series: { name: string; color: string; values: number[] }[];

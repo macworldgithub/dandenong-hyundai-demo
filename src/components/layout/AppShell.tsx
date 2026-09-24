@@ -38,6 +38,9 @@ export function AppShell() {
     <div className="app-shell">
       <LeftRail
         openApExceptionsCount={dashboard.data?.exceptions.openApExceptionsCount}
+        unmatchedBankCount={dashboard.data?.exceptions.unmatchedBankTxnsCount}
+        openControlRecsCount={dashboard.data?.exceptions.unreconciledControlRecsCount}
+        inventoryInStockCount={dashboard.data?.inventoryInStockCount}
       />
       <div className="app-main">
         <ContextHeader

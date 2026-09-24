@@ -27,8 +27,8 @@ export const VinCardModal: React.FC<VinCardModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`VIN Cost Stack: ${vehicle.stockNumber} (${vehicle.make} ${vehicle.model})`}
-      subtitle={`Detailed vehicle costing stack for VIN ${vehicle.vin}`}
+      title={`Stock: ${vehicle.stockNumber} (${vehicle.model})`}
+      subtitle={vehicle.csvDescription || vehicle.variant}
       maxWidth="2xl"
     >
       <div className="space-y-6">
@@ -37,9 +37,9 @@ export const VinCardModal: React.FC<VinCardModalProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-base font-bold text-[#252525]">
-                {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.variant || ''}
+                {vehicle.model} {vehicle.csvDescription || vehicle.variant || ''}
               </span>
-              <StatusBadge status={vehicle.status} />
+              <span className="text-xs">{vehicle.sourceStatus}</span>
             </div>
             <div className="text-xs font-mono text-[#858580] mt-1">
               Stock: <span className="text-[#2936ff]">{vehicle.stockNumber}</span> • VIN: {vehicle.vin}
@@ -54,6 +54,30 @@ export const VinCardModal: React.FC<VinCardModalProps> = ({
               {formatAUD(vehicle.totalCostCents)}
             </span>
           </div>
+        </div>
+
+        {/* Structured fields supplied by the latest stock CSV files */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            ['Stock no', vehicle.stockNumber],
+            ['Age', vehicle.ageDays !== null && vehicle.ageDays !== undefined ? `${vehicle.ageDays} days` : '-'],
+            ...(vehicle.class === 'used' ? [['Year', vehicle.year || '-']] : []),
+            ['Carline', vehicle.model || '-'],
+            ['Description', vehicle.csvDescription || vehicle.variant || '-'],
+            ...(vehicle.registrationNumber?.trim() ? [['Reg no', vehicle.registrationNumber]] : []),
+            ...(vehicle.odometerKm !== null && vehicle.odometerKm !== undefined ? [['Odometer', `${vehicle.odometerKm.toLocaleString()} km`]] : []),
+            ['Colour', vehicle.colour || '-'],
+            ['List price', formatAUD(vehicle.listPriceCents || 0)],
+            ['Loc', vehicle.location || '-'],
+            ...(vehicle.deal?.trim() ? [['Deal', vehicle.deal]] : []),
+            ['Status', vehicle.sourceStatus || '-'],
+            ['Open RO/PO', vehicle.openRoPo || '-'],
+          ].map(([label, value]) => (
+            <div key={String(label)} className="p-3 border border-[#deded9] bg-white min-w-0">
+              <span className="text-[10px] uppercase tracking-wider text-[#858580] block">{label}</span>
+              <strong className="text-xs text-[#252525] break-words">{value}</strong>
+            </div>
+          ))}
         </div>
 
         {/* Cost Stack Waterfall */}

@@ -17,6 +17,17 @@ export interface Vehicle {
   make: string;
   model: string;
   variant?: string;
+  csvDescription?: string;
+  registrationNumber?: string;
+  odometerKm?: number | null;
+  colour?: string;
+  location?: string;
+  listPriceCents: number;
+  ageDays?: number | null;
+  deal?: string;
+  sourceStatus?: string;
+  openRoPo?: string;
+  csvSource?: string;
   year: number;
   class: VehicleClass;
   status: VehicleStatus;
