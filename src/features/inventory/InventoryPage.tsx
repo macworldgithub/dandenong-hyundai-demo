@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { useResource } from '../../hooks/useResource';
 import { allPages } from '../../api/pagination';
-import { getVehiclesApi, getDealsApi, getFloorplanApi } from '../../api/inventory';
+import { getVehiclesApi, getDealsApi, getInventoryStatsApi } from '../../api/inventory';
 import { Vehicle, DealJacket } from '../../types/inventory';
 import { PageHeading, Metrics, Eyebrow, Tabs, Tag, LoadState, compact, dollars } from '../../components/ui/Desk';
 import { FacilityPanel } from './FacilityPanel';
@@ -16,10 +16,12 @@ function PaginationControls({
   page,
   total,
   onPageChange,
+  loading = false,
 }: {
   page: number;
   total: number;
   onPageChange: (page: number) => void;
+  loading?: boolean;
 }) {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const start = total ? (page - 1) * PAGE_SIZE + 1 : 0;
@@ -40,10 +42,10 @@ function PaginationControls({
       <span>
         Showing {start}-{end} of {total} · Page {page} of {totalPages}
       </span>
-      <button className="desk-button" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
+      <button className="desk-button" disabled={loading || page <= 1} onClick={() => onPageChange(page - 1)}>
         Previous
       </button>
-      <button className="desk-button" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
+      <button className="desk-button" disabled={loading || page >= totalPages} onClick={() => onPageChange(page + 1)}>
         Next
       </button>
     </div>
@@ -51,21 +53,6 @@ function PaginationControls({
 }
 
 export function InventoryPage() {
-  const { data, loading, error, refresh } = useResource(async () => {
-    const [vehicles, facility, deals] = await Promise.all([
-      allPages<Vehicle>(async (page) => {
-        const r = await getVehiclesApi({ page, limit: 100 });
-        return { rows: r.vehicles, totalPages: r.totalPages };
-      }),
-      getFloorplanApi(),
-      allPages<DealJacket>(async (page) => {
-        const r = await getDealsApi({ page, limit: 100 });
-        return { rows: r.deals, totalPages: r.totalPages };
-      }),
-    ]);
-    return { vehicles, facility, deals };
-  });
-
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
   const [view, setView] = useState('vehicles');
@@ -75,9 +62,15 @@ export function InventoryPage() {
   const [deal, setDeal] = useState<DealJacket | null>(null);
   const [floorplan, setFloorplan] = useState(false);
 
+  const stats = useResource(getInventoryStatsApi);
+  const { data, loading, error, refresh } = useResource(async () => {
+    const result = await (view === 'vehicles' ? getVehiclesApi({ page, limit: 15, class: filter === 'all' ? undefined : filter, search: query }) : getDealsApi({ page, limit: 15 }));
+    return { vehicles: 'vehicles' in result ? result.vehicles : [], deals: 'deals' in result ? result.deals : [], total: result.total };
+  }, [page, filter, query, view]);
+
   const vehicles = data?.vehicles || [];
   const deals = data?.deals || [];
-  const facility = data?.facility;
+  const facility = stats.data?.facility;
   const stock = vehicles.filter((v) => v.status !== 'delivered');
 
   const age = (v: Vehicle) => {
@@ -94,38 +87,20 @@ export function InventoryPage() {
     { label: '120+ days', min: 121, max: Infinity },
   ];
 
-  const visible = useMemo(
-    () =>
-      vehicles.filter(
-        (v) =>
-          (filter === 'all' || v.class === filter) &&
-          [v.stockNumber, v.vin, v.make, v.model, v.csvDescription, v.registrationNumber, v.colour, v.location, v.deal, v.sourceStatus]
-            .join(' ')
-            .toLowerCase()
-            .includes(query.toLowerCase()),
-      ),
-    [filter, query, vehicles],
-  );
-
-  const rowCount = view === 'vehicles' ? visible.length : deals.length;
-  // Choose columns from the complete selected class, not the current page.
-  const classVehicles = vehicles.filter(v => filter === 'all' || v.class === filter);
-  const showRegistration = classVehicles.some(v => !!v.registrationNumber?.trim());
-  const showOdometer = classVehicles.some(v => v.odometerKm !== null && v.odometerKm !== undefined);
-  const showDeal = classVehicles.some(v => !!v.deal?.trim());
-  const showYear = classVehicles.some(v => v.class === 'used');
-  const totalPages = Math.max(1, Math.ceil(rowCount / PAGE_SIZE));
-  const pageStart = (page - 1) * PAGE_SIZE;
-  const pagedVehicles = visible.slice(pageStart, pageStart + PAGE_SIZE);
-  const pagedDeals = deals.slice(pageStart, pageStart + PAGE_SIZE);
-
+  const visible = vehicles;
+  const rowCount = data?.total || 0;
+  const showRegistration = filter === 'all' || filter === 'used';
+  const showOdometer = showRegistration;
+  const showDeal = filter !== 'used';
+  const showYear = showRegistration;
+  const pagedVehicles = loading ? [] : vehicles;
+  const pagedDeals = loading ? [] : deals;
+  const summary = stats.data?.summary;
   useEffect(() => {
-    setPage(1);
-  }, [filter, query, view]);
-
-  useEffect(() => {
-    setPage((current) => Math.min(current, totalPages));
-  }, [totalPages]);
+    const updated = () => { stats.refresh(); };
+    window.addEventListener('accounting-data-updated', updated);
+    return () => window.removeEventListener('accounting-data-updated', updated);
+  }, [stats.refresh]);
 
   return (
     <div className="desk-page">
@@ -140,16 +115,17 @@ export function InventoryPage() {
         }
       />
 
+      <LoadState loading={stats.loading} error={stats.error} retry={stats.refresh} />
       <Metrics
         items={[
           {
             label: 'Units in stock',
-            value: data ? stock.length : '-',
+            value: summary ? summary.count : '-',
             note: 'Across new, used and demonstrator',
           },
           {
             label: 'Inventory at cost',
-            value: data ? compact(stock.reduce((s, v) => s + v.totalCostCents, 0)) : '-',
+            value: summary ? compact(summary.cost) : '-',
             note: 'New, used and demonstrator',
           },
           {
@@ -168,7 +144,7 @@ export function InventoryPage() {
           },
           {
             label: 'Stock over 90 days',
-            value: data ? stock.filter((v) => (age(v) ?? 0) > 90).length : '-',
+            value: summary ? summary.over90 : '-',
             note: 'Review aging stock',
             tone: 'amber',
           },
@@ -187,17 +163,14 @@ export function InventoryPage() {
 
       <div className="heatmap">
         {bands.map((band, index) => {
-          const rows = stock.filter((v) => {
-            const days = age(v);
-            return days !== null && days >= band.min && days <= band.max;
-          });
+          const bucket = summary?.bands.find(b => b._id === band.min);
           return (
             <div key={band.label} style={{ background: `rgba(174, 45, 35, ${index * 0.023})` }}>
               <label>{band.label}</label>
-              <strong>{data ? rows.length : '-'}</strong>
-              <small>units · {data ? compact(rows.reduce((s, v) => s + v.totalCostCents, 0)) : '-'}</small>
+              <strong>{summary ? bucket?.count || 0 : '-'}</strong>
+              <small>units · {summary ? compact(bucket?.cost || 0) : '-'}</small>
               <div className="bar">
-                <i style={{ width: `${stock.length ? (rows.length / stock.length) * 100 : 0}%` }} />
+                <i style={{ width: `${summary?.count ? ((bucket?.count || 0) / summary.count) * 100 : 0}%` }} />
               </div>
             </div>
           );
@@ -210,7 +183,7 @@ export function InventoryPage() {
             label="Class"
             values={['all', 'new', 'used', 'demo'].map((key) => ({ key, label: key }))}
             value={filter}
-            onChange={setFilter}
+            onChange={value => { setPage(1); setFilter(value); }}
           />
 
           <div className="table-scroll">
@@ -291,7 +264,7 @@ export function InventoryPage() {
             )}
           </div>
 
-          <PaginationControls page={page} total={rowCount} onPageChange={setPage} />
+          <PaginationControls page={page} total={rowCount} onPageChange={setPage} loading={loading} />
           <LoadState loading={false} empty={!!data && (view === 'vehicles' ? !visible.length : !deals.length)} />
 
           <div className="toolbar section-spacer">
@@ -300,9 +273,9 @@ export function InventoryPage() {
               aria-label="Search stock or VIN"
               placeholder="Search stock, VIN, registration, model, colour or deal..."
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => { setPage(1); setQuery(e.target.value); }}
             />
-            <button className="desk-button" onClick={() => setView(view === 'vehicles' ? 'deals' : 'vehicles')}>
+            <button className="desk-button" onClick={() => { setPage(1); setView(view === 'vehicles' ? 'deals' : 'vehicles'); }}>
               {view === 'vehicles' ? 'Delivered deal jackets' : 'Vehicle register'}
             </button>
           </div>

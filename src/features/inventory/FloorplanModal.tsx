@@ -13,37 +13,36 @@ interface FloorplanModalProps {
   onClose: () => void;
 }
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 15;
 
 export const FloorplanModal: React.FC<FloorplanModalProps> = ({ isOpen, onClose }) => {
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(1);
+  const [error, setError] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
     if (isOpen) {
-      setPage(1);
+
       setIsLoading(true);
-      getFloorplanApi()
-        .then((res) => setData(res))
-        .catch((err) => console.error('Failed to load floorplan:', err))
-        .finally(() => setIsLoading(false));
+      setError('');
+      getFloorplanApi(page)
+        .then((res) => { if (!cancelled) setData(res); })
+        .catch(() => { if (!cancelled) { setData(null); setError('Unable to load floorplan records. Close and reopen to retry.'); } })
+        .finally(() => { if (!cancelled) setIsLoading(false); });
     }
-  }, [isOpen]);
+    return () => { cancelled = true; };
+  }, [isOpen, page]);
 
   const activeDraws = data?.activeDraws || [];
-  const totalPages = Math.max(1, Math.ceil(activeDraws.length / PAGE_SIZE));
+  const total = data?.total || 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const pageStart = (page - 1) * PAGE_SIZE;
-  const pagedDraws = useMemo(
-    () => activeDraws.slice(pageStart, pageStart + PAGE_SIZE),
-    [activeDraws, pageStart],
-  );
-  const showingStart = activeDraws.length ? pageStart + 1 : 0;
-  const showingEnd = Math.min(page * PAGE_SIZE, activeDraws.length);
-
-  useEffect(() => {
-    setPage((current) => Math.min(current, totalPages));
-  }, [totalPages]);
+  const pagedDraws = activeDraws;
+  const showingStart = total ? pageStart + 1 : 0;
+  const showingEnd = Math.min(page * PAGE_SIZE, total);
+  useEffect(() => { if (!isOpen) { setPage(1); setData(null); } }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -55,6 +54,7 @@ export const FloorplanModal: React.FC<FloorplanModalProps> = ({ isOpen, onClose 
       subtitle="Hyundai Capital floorplan facility lines and vehicle-level interest accruals"
       maxWidth="3xl"
     >
+      {error && <p role="alert">{error}</p>}
       {isLoading ? (
         <div className="py-16 text-center text-xs text-[#858580]">Loading wholesale lines...</div>
       ) : data ? (
@@ -84,7 +84,7 @@ export const FloorplanModal: React.FC<FloorplanModalProps> = ({ isOpen, onClose 
 
           <div className="space-y-2">
             <div className="text-xs font-semibold text-[#252525]">
-              Active Unit Draws ({activeDraws.length || 0} Vehicles)
+              Active Unit Draws ({total || 0} Vehicles)
             </div>
 
             <div className="max-h-72 overflow-y-auto">
@@ -132,10 +132,10 @@ export const FloorplanModal: React.FC<FloorplanModalProps> = ({ isOpen, onClose 
 
             <div className="pagination">
               <span>
-                Showing {showingStart}-{showingEnd} of {activeDraws.length}
-                {activeDraws.length > PAGE_SIZE ? ` · Page ${page} of ${totalPages}` : ''}
+                Showing {showingStart}-{showingEnd} of {total}
+                {total > PAGE_SIZE ? ` · Page ${page} of ${totalPages}` : ''}
               </span>
-              {activeDraws.length > PAGE_SIZE && (
+              {total > PAGE_SIZE && (
                 <>
                   <button className="desk-button" disabled={page <= 1} onClick={() => setPage(page - 1)}>
                     Previous

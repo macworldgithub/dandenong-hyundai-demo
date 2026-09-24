@@ -1,22 +1,37 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { History, Search, RefreshCw, Shield, ChevronDown, ChevronRight, User } from 'lucide-react';
-import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '../../components/ui/Table';
-import { getAuditLogsApi, getAuditFiltersApi } from '../../api/audit';
-import { useResource } from '../../hooks/useResource';
-import { AuditLogEntry } from '../../types/audit';
-import { formatDateTime } from '../../lib/dates';
+import React, { useEffect, useState, useRef } from "react";
+import {
+  History,
+  Search,
+  RefreshCw,
+  Shield,
+  ChevronDown,
+  ChevronRight,
+  User,
+} from "lucide-react";
+import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "../../components/ui/Table";
+import { getAuditLogsApi, getAuditFiltersApi } from "../../api/audit";
+import { useResource } from "../../hooks/useResource";
+import { AuditLogEntry } from "../../types/audit";
+import { formatDateTime } from "../../lib/dates";
 
 export const AuditLogPage: React.FC = () => {
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [entityFilter, setEntityFilter] = useState('all');
+  const [entityFilter, setEntityFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [action, setAction] = useState('');
+  const [error, setError] = useState("");
+  const [action, setAction] = useState("");
   const [total, setTotal] = useState(0);
   const filters = useResource(getAuditFiltersApi);
   const requestVersion = useRef(0);
@@ -24,13 +39,13 @@ export const AuditLogPage: React.FC = () => {
   const fetchLogs = async () => {
     const version = ++requestVersion.current;
     setIsLoading(true);
-    setError('');
+    setError("");
     try {
       const res = await getAuditLogsApi({
-        entityType: entityFilter === 'all' ? undefined : entityFilter,
+        entityType: entityFilter === "all" ? undefined : entityFilter,
         action: action || undefined,
         page,
-        limit: 25,
+        limit: 15,
       });
       if (version !== requestVersion.current) return;
       setLogs(res.logs || []);
@@ -40,7 +55,10 @@ export const AuditLogPage: React.FC = () => {
     } catch (err: any) {
       if (version !== requestVersion.current) return;
       setLogs([]);
-      setError(err.response?.data?.error || 'Unable to load audit events. Please retry.');
+      setError(
+        err.response?.data?.error ||
+          "Unable to load audit events. Please retry.",
+      );
     } finally {
       if (version === requestVersion.current) setIsLoading(false);
     }
@@ -48,7 +66,9 @@ export const AuditLogPage: React.FC = () => {
 
   useEffect(() => {
     fetchLogs();
-    return () => { requestVersion.current++; };
+    return () => {
+      requestVersion.current++;
+    };
   }, [entityFilter, action, page]);
 
   const toggleExpand = (id: string) => {
@@ -65,24 +85,46 @@ export const AuditLogPage: React.FC = () => {
             <span>Immutable Audit Trail</span>
           </h1>
           <p className="text-xs text-[#858580] mt-1">
-            Complete historical activity record. All journal postings, reversals, allocations, and approvals are append-only.
+            Complete historical activity record. All journal postings,
+            reversals, allocations, and approvals are append-only.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5">
-          <Button variant="outline" size="sm" onClick={fetchLogs} isLoading={isLoading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchLogs}
+            isLoading={isLoading}
+          >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Refresh Audit Trail</span>
           </Button>
         </div>
       </div>
 
-      {(error || filters.error) && <p role="alert" className="text-sm text-red-700">{error || filters.error}</p>}
+      {(error || filters.error) && (
+        <p role="alert" className="text-sm text-red-700">
+          {error || filters.error}
+        </p>
+      )}
       <div className="flex items-center gap-3 text-xs">
         <label htmlFor="audit-action">Action</label>
-        <select id="audit-action" className="search-input" value={action} onChange={e => { setAction(e.target.value); setPage(1); }}>
+        <select
+          id="audit-action"
+          className="search-input"
+          value={action}
+          onChange={(e) => {
+            setAction(e.target.value);
+            setPage(1);
+          }}
+        >
           <option value="">All actions</option>
-          {filters.data?.actions.map(value => <option key={value} value={value}>{value}</option>)}
+          {filters.data?.actions.map((value) => (
+            <option key={value} value={value}>
+              {value}
+            </option>
+          ))}
         </select>
         {!isLoading && !error && <span>{total} events</span>}
       </div>
@@ -91,7 +133,7 @@ export const AuditLogPage: React.FC = () => {
         <div className="p-4 border-b border-[#deded9] flex items-center justify-between bg-[#f6f6f3]">
           {/* Filter tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto text-xs">
-            {['all', ...(filters.data?.entityTypes || [])].map((type) => (
+            {["all", ...(filters.data?.entityTypes || [])].map((type) => (
               <button
                 key={type}
                 onClick={() => {
@@ -100,11 +142,11 @@ export const AuditLogPage: React.FC = () => {
                 }}
                 className={`px-3 py-1.5 rounded-none capitalize font-medium transition-colors ${
                   entityFilter === type
-                    ? 'bg-sky-600/20 text-[#2936ff] border border-sky-500/40'
-                    : 'text-[#858580] hover:text-[#252525] hover:bg-[#f6f6f3]'
+                    ? "bg-sky-600/20 text-[#2936ff] border border-sky-500/40"
+                    : "text-[#858580] hover:text-[#252525] hover:bg-[#f6f6f3]"
                 }`}
               >
-                {type === 'all' ? 'All Events' : type}
+                {type === "all" ? "All Events" : type}
               </button>
             ))}
           </div>
@@ -124,7 +166,10 @@ export const AuditLogPage: React.FC = () => {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-12 text-xs text-[#858580]">
+                <TableCell
+                  colSpan={5}
+                  className="text-center py-12 text-xs text-[#858580]"
+                >
                   Loading audit logs...
                 </TableCell>
               </TableRow>
@@ -132,7 +177,9 @@ export const AuditLogPage: React.FC = () => {
               logs.map((log) => {
                 const isExpanded = expandedId === log._id;
                 const userName =
-                  typeof log.userId === 'object' ? (log.userId as any)?.name || 'Unknown user' : 'System / Controller';
+                  typeof log.userId === "object"
+                    ? (log.userId as any)?.name || "Unknown user"
+                    : "System / Controller";
 
                 return (
                   <React.Fragment key={log._id}>
@@ -186,7 +233,9 @@ export const AuditLogPage: React.FC = () => {
                           <div className="grid grid-cols-2 gap-4 font-mono text-[11px]">
                             {log.before && (
                               <div className="space-y-1">
-                                <span className="text-amber-700">Before State:</span>
+                                <span className="text-amber-700">
+                                  Before State:
+                                </span>
                                 <pre className="p-3 rounded-none bg-[#f6f6f3] border border-[#deded9] overflow-x-auto text-[#252525]">
                                   {JSON.stringify(log.before, null, 2)}
                                 </pre>
@@ -195,7 +244,9 @@ export const AuditLogPage: React.FC = () => {
 
                             {log.after && (
                               <div className="space-y-1">
-                                <span className="text-[#217454]">After State:</span>
+                                <span className="text-[#217454]">
+                                  After State:
+                                </span>
                                 <pre className="p-3 rounded-none bg-[#f6f6f3] border border-[#deded9] overflow-x-auto text-[#252525]">
                                   {JSON.stringify(log.after, null, 2)}
                                 </pre>
@@ -210,8 +261,13 @@ export const AuditLogPage: React.FC = () => {
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-12 text-xs text-[#858580]">
-                  {error ? 'Audit events could not be loaded.' : 'No audit events match the selected filters.'}
+                <TableCell
+                  colSpan={5}
+                  className="text-center py-12 text-xs text-[#858580]"
+                >
+                  {error
+                    ? "Audit events could not be loaded."
+                    : "No audit events match the selected filters."}
                 </TableCell>
               </TableRow>
             )}

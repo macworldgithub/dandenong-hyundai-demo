@@ -3,13 +3,24 @@ import { getDashboardKPIsApi } from './dashboard';
 import { allPages } from './pagination';
 import { Vehicle, DealJacket, FloorplanDraw } from '../types/inventory';
 
+export async function getInventoryStatsApi(): Promise<{
+  summary: { count: number; cost: number; over90: number; bands: { _id: number; count: number; cost: number }[] };
+  facility: Awaited<ReturnType<typeof getFloorplanApi>>;
+}> {
+  const { data } = await client.get('/inventory/stats');
+  if (!data.summary || !Number.isFinite(data.facility?.facilityLimitCents)) {
+    throw new Error('Inventory statistics response is incomplete');
+  }
+  return data;
+}
+
 export async function getVehiclesApi(params: {
   class?: string;
   status?: string;
   search?: string;
   page?: number;
   limit?: number;
-}): Promise<{ vehicles: Vehicle[]; total: number; page: number; totalPages: number }> {
+}): Promise<{ summary: { count: number; cost: number; over90: number; bands: { _id: number; count: number; cost: number }[] }; vehicles: Vehicle[]; total: number; page: number; totalPages: number }> {
   const { data } = await client.get('/inventory/vehicles', { params: { ...params, q: params.search } });
   return data;
 }
@@ -44,19 +55,13 @@ export async function getDealApi(id: string): Promise<{ deal: DealJacket; vehicl
   return data;
 }
 
-export async function getFloorplanApi(): Promise<{
-  activeDraws: FloorplanDraw[];
-  totalDrawnCents: number;
-  totalInterestCents: number;
-  facilityLimitCents: number;
-  headroomCents: number;
+export async function getFloorplanApi(page = 1): Promise<{
+  activeDraws: FloorplanDraw[]; total: number; totalPages: number;
+  financiers: { _id: string; count: number; drawn: number; interest: number }[];
+  totalDrawnCents: number; totalInterestCents: number; facilityLimitCents: number; headroomCents: number;
 }> {
-  const [activeDraws, dashboard] = await Promise.all([
-    allPages<FloorplanDraw>(async page => { const { data } = await client.get('/inventory/floorplan', { params: { settled: false, page, limit: 100 } }); return { rows: data.draws || data.activeDraws || [], totalPages: data.totalPages || 1 }; }),
-    getDashboardKPIsApi(),
-  ]);
-  const totalDrawnCents = activeDraws.reduce((sum, d) => sum + d.drawnAmountCents, 0);
-  return { activeDraws, totalDrawnCents, totalInterestCents: activeDraws.reduce((sum, d) => sum + d.interestAccruedCents, 0), facilityLimitCents: dashboard.facilityLimitCents, headroomCents: dashboard.facilityLimitCents - totalDrawnCents };
+  const { data } = await client.get('/inventory/floorplan', { params: { settled: false, page, limit: 15 } });
+  return { ...data, activeDraws: data.draws };
 }
 
 // The backend accrues all eligible draws at once; there is no per-draw endpoint.
