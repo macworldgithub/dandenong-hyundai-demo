@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useResource } from '../../hooks/useResource';
 import { allPages } from '../../api/pagination';
-import { getVehiclesApi, getDealsApi, getInventoryStatsApi } from '../../api/inventory';
+import { getVehiclesApi, getDealsApi, getInventoryStatsApi, getVehicleMakesApi } from '../../api/inventory';
 import { Vehicle, DealJacket } from '../../types/inventory';
 import { PageHeading, Metrics, Eyebrow, Tabs, Tag, LoadState, compact, dollars } from '../../components/ui/Desk';
 import { FacilityPanel } from './FacilityPanel';
@@ -55,6 +55,7 @@ function PaginationControls({
 
 export function InventoryPage() {
   const [filter, setFilter] = useState('all');
+  const [make, setMake] = useState('all');
   const [query, setQuery] = useState('');
   const [view, setView] = useState('vehicles');
   const [page, setPage] = useState(1);
@@ -64,10 +65,11 @@ export function InventoryPage() {
   const [floorplan, setFloorplan] = useState(false);
 
   const stats = useResource(getInventoryStatsApi);
+  const makes = useResource(getVehicleMakesApi);
   const { data, loading, error, refresh } = useResource(async () => {
-    const result = await (view === 'vehicles' ? getVehiclesApi({ page, limit: 15, class: filter === 'all' ? undefined : filter, search: query }) : getDealsApi({ page, limit: 15 }));
+    const result = await (view === 'vehicles' ? getVehiclesApi({ page, limit: 15, class: filter === 'all' ? undefined : filter, make: make === 'all' ? undefined : make, search: query }) : getDealsApi({ page, limit: 15 }));
     return { vehicles: 'vehicles' in result ? result.vehicles : [], deals: 'deals' in result ? result.deals : [], total: result.total };
-  }, [page, filter, query, view]);
+  }, [page, filter, make, query, view]);
 
   const vehicles = data?.vehicles || [];
   const deals = data?.deals || [];
@@ -187,6 +189,22 @@ export function InventoryPage() {
             onChange={value => { setPage(1); setFilter(value); }}
           />
 
+          {view === 'vehicles' && (
+            <div className="toolbar section-spacer">
+              <label htmlFor="inventory-make" className="chart-note">Manufacturer</label>
+              <select
+                id="inventory-make"
+                className="search-input"
+                aria-label="Filter vehicles by manufacturer"
+                value={make}
+                onChange={(e) => { setPage(1); setMake(e.target.value); }}
+              >
+                <option value="all">All makes</option>
+                {makes.data?.map((vehicleMake) => <option key={vehicleMake} value={vehicleMake}>{vehicleMake}</option>)}
+              </select>
+            </div>
+          )}
+
           <div className="table-scroll">
             {view === 'vehicles' ? (
               <table className="data-table">
@@ -194,6 +212,7 @@ export function InventoryPage() {
                   <tr>
                     <th>Stock no</th>
                     {showYear && <th>Year</th>}
+                    <th>Make</th>
                     <th>Carline</th>
                     <th>Description</th>
                     {showRegistration && <th>Reg no</th>}
@@ -219,6 +238,7 @@ export function InventoryPage() {
                           </button>
                         </td>
                         {showYear && <td>{v.class === 'used' ? v.year : '-'}</td>}
+                        <td>{v.make}</td>
                         <td>{v.model}</td>
                         <td>{v.csvDescription || v.variant || '-'}</td>
                         {showRegistration && <td className="num">{v.registrationNumber || '-'}</td>}

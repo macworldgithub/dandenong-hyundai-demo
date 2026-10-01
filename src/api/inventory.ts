@@ -16,6 +16,7 @@ export async function getInventoryStatsApi(): Promise<{
 
 export async function getVehiclesApi(params: {
   class?: string;
+  make?: string;
   status?: string;
   search?: string;
   page?: number;
@@ -23,6 +24,11 @@ export async function getVehiclesApi(params: {
 }): Promise<{ summary: { count: number; cost: number; over90: number; bands: { _id: number; count: number; cost: number }[] }; vehicles: Vehicle[]; total: number; page: number; totalPages: number }> {
   const { data } = await client.get('/inventory/vehicles', { params: { ...params, q: params.search } });
   return data;
+}
+
+export async function getVehicleMakesApi(): Promise<string[]> {
+  const { data } = await client.get('/inventory/makes');
+  return data.makes || [];
 }
 
 export async function getVehicleApi(id: string): Promise<{ vehicle: Vehicle; deals?: DealJacket[]; floorplan?: FloorplanDraw }> {
