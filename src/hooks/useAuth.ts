@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User } from '../types/user';
 import { getMeApi } from '../api/auth';
+import { clearStoredSession, getStoredToken, getTokenExpiryMs, isTokenExpired } from '../lib/authSession';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(() => {
@@ -12,16 +13,49 @@ export function useAuth() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const expired = () => { setUser(null); navigate('/login', { replace: true }); };
+    const expired = () => {
+      clearStoredSession();
+      setUser(null);
+      navigate('/login', { replace: true });
+    };
+
     window.addEventListener('auth-expired', expired);
     return () => window.removeEventListener('auth-expired', expired);
   }, [navigate]);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = getStoredToken();
+    if (!token) return;
+
+    const expiresAt = getTokenExpiryMs(token);
+    if (!expiresAt) return;
+
+    const delay = expiresAt - Date.now();
+    if (delay <= 0) {
+      window.dispatchEvent(new Event('auth-expired'));
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      window.dispatchEvent(new Event('auth-expired'));
+    }, delay);
+
+    return () => window.clearTimeout(timeout);
+  }, [user]);
+
+  useEffect(() => {
+    const token = getStoredToken();
     if (!token) {
       setUser(null);
       setIsLoading(false);
+      return;
+    }
+
+    if (isTokenExpired(token)) {
+      clearStoredSession();
+      setUser(null);
+      setIsLoading(false);
+      navigate('/login', { replace: true });
       return;
     }
 
@@ -32,8 +66,7 @@ export function useAuth() {
       })
       .catch((error) => {
         if (error.response?.status !== 401) return;
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        clearStoredSession();
         setUser(null);
         navigate('/login', { replace: true });
       })
@@ -43,8 +76,7 @@ export function useAuth() {
   }, []);
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    clearStoredSession();
     setUser(null);
     navigate('/login');
   };

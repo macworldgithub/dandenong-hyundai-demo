@@ -41,8 +41,8 @@ export function SignupPage() {
         <RolePicker value={role} onChange={setRole}/>
         <Input label="Full name" required value={name} onChange={event => setName(event.target.value)} placeholder="Your name" />
         <Input label="Email Address" type="email" required value={email} onChange={event => setEmail(event.target.value)} placeholder="name@dealership.com.au" />
-        <Input label="Password" type="password" required minLength={8} value={password} onChange={event => setPassword(event.target.value)} placeholder="At least 8 characters" />
-        <Input label="Confirm password" type="password" required minLength={8} value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} placeholder="Repeat your password" />
+        <Input label="Password" type="password" required minLength={6} value={password} onChange={event => setPassword(event.target.value)} placeholder="At least 6 characters" />
+        <Input label="Confirm password" type="password" required minLength={6} value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} placeholder="Repeat your password" />
         <Button type="submit" className="w-full" size="lg" isLoading={isLoading}><span>Create account</span><ArrowRight className="w-4 h-4"/></Button>
       </form>
       <div className="mt-5 pt-5 border-t border-[#deded9] text-center text-xs text-[#858580]">Already registered? <Link className="font-semibold text-[#2936ff]" to="/login">Sign in</Link></div>

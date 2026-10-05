@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios';
+import { clearStoredSession, expireCurrentSession, getStoredToken, isTokenExpired } from '../lib/authSession';
 
 const DEFAULT_API_BASE_URL = 'https://dandenong-hyundai-demo-backend.vercel.app/api';
 const apiBaseUrl = (import.meta.env.VITE_API_URL || DEFAULT_API_BASE_URL).trim();
@@ -13,7 +14,12 @@ const client = axios.create({
 
 // Request interceptor: attach Bearer token from localStorage
 client.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = getStoredToken();
+  if (token && isTokenExpired(token)) {
+    expireCurrentSession();
+    return Promise.reject(new axios.Cancel('Session expired'));
+  }
+
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -35,8 +41,7 @@ client.interceptors.response.use(
       // Only clear auth if we're not on the login page (login failures should not clear stored tokens)
       const isLoginRequest = error.config?.url?.includes('/auth/login');
       if (!isLoginRequest) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        clearStoredSession();
         window.dispatchEvent(new Event('auth-expired'));
         // Use soft navigation — React router's ProtectedRoute will handle redirect
         // Avoid hard window.location.href which causes full-page reload race conditions
