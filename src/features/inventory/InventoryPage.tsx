@@ -9,6 +9,7 @@ import { VinCardModal } from './VinCardModal';
 import { DealJacketModal } from './DealJacketModal';
 import { AddCostLineModal } from './AddCostLineModal';
 import { FloorplanModal } from './FloorplanModal';
+import { ImportCsvModal } from './ImportCsvModal';
 import { Pagination } from '../../components/ui/Pagination';
 
 const PAGE_SIZE = 15;
@@ -63,6 +64,7 @@ export function InventoryPage() {
   const [cost, setCost] = useState<Vehicle | null>(null);
   const [deal, setDeal] = useState<DealJacket | null>(null);
   const [floorplan, setFloorplan] = useState(false);
+  const [isImportOpen, setImportOpen] = useState(false);
 
   const stats = useResource(getInventoryStatsApi);
   const makes = useResource(getVehicleMakesApi);
@@ -112,9 +114,14 @@ export function InventoryPage() {
         title="VIN-level costing and floorplan sub-ledger"
         description="Every vehicle is a unique inventory item under specific identification. Cost accumulates by VIN and cost of sale is exact at the moment of delivery. Floorplan liability is always reconcilable to both the inventory schedule and the financier statement."
         actions={
-          <button className="desk-button" onClick={() => setFloorplan(true)}>
-            View stocktake reconciliation
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="desk-button" onClick={() => setImportOpen(true)}>
+              Import CSV
+            </button>
+            <button className="desk-button" onClick={() => setFloorplan(true)}>
+              View stocktake reconciliation
+            </button>
+          </div>
         }
       />
 
@@ -262,24 +269,33 @@ export function InventoryPage() {
                 <thead>
                   <tr>
                     <th>Deal</th>
+                    <th>Stock no</th>
+                    <th>Model / Carline</th>
+                    <th>Customer</th>
                     <th>Delivery</th>
                     <th>Sale</th>
                     <th>Contribution</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {pagedDeals.map((d) => (
-                    <tr key={d._id}>
-                      <td>
-                        <button className="text-link" onClick={() => setDeal(d)}>
-                          {d.dealNumber}
-                        </button>
-                      </td>
-                      <td>{new Date(d.deliveryDate).toLocaleDateString('en-AU')}</td>
-                      <td className="num">{dollars(d.sellingPriceCents)}</td>
-                      <td className="num">{dollars(d.dealContributionCents)}</td>
-                    </tr>
-                  ))}
+                  {pagedDeals.map((d) => {
+                    const veh = typeof d.vehicleId === 'object' ? (d.vehicleId as any) : null;
+                    return (
+                      <tr key={d._id}>
+                        <td>
+                          <button className="text-link num" onClick={() => setDeal(d)}>
+                            {d.dealNumber}
+                          </button>
+                        </td>
+                        <td className="num">{veh?.stockNumber || '-'}</td>
+                        <td>{veh ? `${veh.make} ${veh.model}` : '-'}</td>
+                        <td>{d.customerRef || '-'}</td>
+                        <td>{new Date(d.deliveryDate).toLocaleDateString('en-AU')}</td>
+                        <td className="num">{dollars(d.sellingPriceCents)}</td>
+                        <td className="num">{dollars(d.dealContributionCents)}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
@@ -319,6 +335,14 @@ export function InventoryPage() {
       <AddCostLineModal isOpen={!!cost} onClose={() => setCost(null)} vehicle={cost} onSuccess={refresh} />
       <DealJacketModal isOpen={!!deal} onClose={() => setDeal(null)} deal={deal} />
       <FloorplanModal isOpen={floorplan} onClose={() => setFloorplan(false)} />
+      <ImportCsvModal
+        isOpen={isImportOpen}
+        onClose={() => setImportOpen(false)}
+        onSuccess={() => {
+          refresh();
+          stats.refresh();
+        }}
+      />
     </div>
   );
 }

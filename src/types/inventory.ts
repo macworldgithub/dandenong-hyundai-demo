@@ -55,8 +55,18 @@ export interface DealJacket {
   frontGrossCents: number;
   backGrossCents: number;
   dealContributionCents: number;
-  journalEntryId?: string;
-  isIllustrative: boolean;
+  salespersonCode?: string;
+  modelCode?: string;
+  department?: string;
+  settlementsCents?: number;
+  balanceOwingCents?: number;
+  vehicleDepositCents?: number;
+  stampDutyCents?: number;
+  registrationCtpCents?: number;
+  dealerAccessoriesCents?: number;
+  dealerDeliveryCents?: number;
+  factoryOptionsCents?: number;
+  miscellaneousCents?: number;
   createdAt?: string;
   updatedAt?: string;
 }

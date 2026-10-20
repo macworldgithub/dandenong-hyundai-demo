@@ -75,3 +75,23 @@ export async function accrueFloorplanInterestApi(): Promise<unknown> {
   const { data } = await client.post('/inventory/floorplan/accrue-interest');
   return data;
 }
+
+export async function importInventoryCsvApi(formDataOrPayload: FormData | { csvText?: string; fileName?: string; useDefaultFiles?: boolean }): Promise<{
+  success: boolean;
+  message: string;
+  summary: {
+    processed: number;
+    vehiclesCreated: number;
+    vehiclesUpdated: number;
+    dealsCreated: number;
+    dealsUpdated: number;
+  };
+  totalDeals: number;
+  totalVehicles: number;
+}> {
+  const isFormData = formDataOrPayload instanceof FormData;
+  const { data } = await client.post('/inventory/import-csv', formDataOrPayload, {
+    headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
+  });
+  return data;
+}
