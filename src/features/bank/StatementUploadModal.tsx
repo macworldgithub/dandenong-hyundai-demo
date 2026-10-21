@@ -54,9 +54,12 @@ export const StatementUploadModal: React.FC<StatementUploadModalProps> = ({
           onFileSelect={handleFileSelect}
           isLoading={isLoading}
           title="Drop NAB CSV / XLSX Statement"
-          subtitle="Supports automatic column mapping for date, description, debit, and credit"
+          subtitle="Requires Date, Description, and Amount or Debit and Credit columns"
         />
 
+        <p className="text-[11px] text-[#858580] text-center">
+          Upload transaction-level bank exports. Weekly management packs and summary reports are not bank statements.
+        </p>
         <p className="text-[11px] text-[#858580] text-center">
           Incoming transactions will run through the real-time candidate scoring engine.
         </p>

@@ -27,17 +27,19 @@ export function BrandMark() {
     </svg>
   );
 }
-type Item = { label: string; icon: LucideIcon; to?: string; count?: number };
+type Item = { label: string; icon: LucideIcon; to?: string; count?: number; countLabel?: string };
 export function LeftRail({
-  unmatchedBankCount = 0,
-  openApExceptionsCount = 0,
-  openControlRecsCount = 0,
-  inventoryInStockCount = 0,
+  bankTransactionCount,
+  invoiceCount,
+  accountCount,
+  auditEventCount,
+  vehicleCount,
 }: {
-  unmatchedBankCount?: number;
-  openApExceptionsCount?: number;
-  openControlRecsCount?: number;
-  inventoryInStockCount?: number;
+  bankTransactionCount?: number;
+  invoiceCount?: number;
+  accountCount?: number;
+  auditEventCount?: number;
+  vehicleCount?: number;
 }) {
   const groups: { title: string; items: Item[] }[] = [
     {
@@ -50,15 +52,16 @@ export function LeftRail({
     {
       title: "Ledgers",
       items: [
-        { label: "General Ledger", icon: BookOpen, to: "/gl", count: openControlRecsCount },
+        { label: "General Ledger", icon: BookOpen, to: "/gl", count: accountCount, countLabel: 'Total ledger accounts' },
         {
           label: "Accounts Payable",
           icon: Receipt,
           to: "/ap",
-          count: openApExceptionsCount,
+          count: invoiceCount,
+          countLabel: 'Total invoices',
         },
         // { label: "Accounts Receivable", icon: FileText },
-        { label: "Inventory & Floorplan", icon: Boxes, to: "/inventory", count: inventoryInStockCount },
+        { label: "Inventory & Floorplan", icon: Boxes, to: "/inventory", count: vehicleCount, countLabel: 'Total vehicles' },
         // { label: "Parts & Service", icon: Wrench },
       ],
     },
@@ -66,8 +69,8 @@ export function LeftRail({
       title: "Group",
       items: [
         // { label: "Consolidation", icon: Building2 },
-        { label: "Cash & Treasury", icon: Landmark, to: "/bank", count: unmatchedBankCount },
-        { label: "Compliance & Audit", icon: ShieldCheck, to: "/audit" },
+        { label: "Cash & Treasury", icon: Landmark, to: "/bank", count: bankTransactionCount, countLabel: 'Total bank transactions across all accounts' },
+        { label: "Compliance & Audit", icon: ShieldCheck, to: "/audit", count: auditEventCount, countLabel: 'Total audit events' },
       ],
     },
     // {
@@ -100,7 +103,7 @@ export function LeftRail({
         {groups.map((group) => (
           <section key={group.title}>
             <h2>{group.title}</h2>
-            {group.items.map(({ label, icon: Icon, to, count }) =>
+            {group.items.map(({ label, icon: Icon, to, count, countLabel }) =>
               to ? (
                 <NavLink
                   key={label}
@@ -112,7 +115,7 @@ export function LeftRail({
                 >
                   <Icon />
                   <span>{label}</span>
-                  {!!count && <b className="rail-count">{count}</b>}
+                  {count !== undefined && <b className="rail-count" title={`${countLabel}: ${count.toLocaleString()}`} aria-label={`${countLabel}: ${count.toLocaleString()}`}>{count.toLocaleString()}</b>}
                 </NavLink>
               ) : (
                 <span
