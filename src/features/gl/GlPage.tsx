@@ -14,7 +14,15 @@ import { Modal } from '../../components/ui/Modal';
 
 export function GlPage() {
   const { activePeriod } = useOutletContext<{activePeriod:Period|null}>();
-  const { data,loading,error,refresh }=useResource(async()=>{const [tb,accounts,journals,recs]=await Promise.all([getTrialBalanceApi({periodId:activePeriod?._id}),getAccountsApi(),getJournalsApi({periodId:activePeriod?._id,limit:30}),getControlRecsApi(activePeriod?._id)]);return {tb,accounts:accounts.accounts,journals:journals.journals,recs:recs.controlRecs};},[activePeriod?._id]);
+  const { data, loading, error, refresh } = useResource(async () => {
+    const [tb, accounts, journals, recs] = await Promise.all([
+      getTrialBalanceApi({ periodId: activePeriod?._id }),
+      getAccountsApi(),
+      getJournalsApi({ periodId: activePeriod?._id, limit: 30 }),
+      getControlRecsApi(activePeriod?._id).catch(() => ({ controlRecs: [] })),
+    ]);
+    return { tb, accounts: accounts.accounts, journals: journals.journals, recs: recs.controlRecs || [] };
+  }, [activePeriod?._id]);
   const [query,setQuery]=useState(''); const [view,setView]=useState('management'); const [closed,setClosed]=useState<string[]>([]);
   const [account,setAccount]=useState<string|null>(null); const [manual,setManual]=useState(false); const [evidence,setEvidence]=useState(false); const [rec,setRec]=useState<ControlRec|null>(null); const [journal,setJournal]=useState<JournalEntry|null>(null);
   const rows=(data?.tb.accounts || []).filter(a=>[a.code,a.name,a.department].join(' ').toLowerCase().includes(query.toLowerCase()));

@@ -24,7 +24,8 @@ export function BankPage() {
   const [scenario,setScenario]=useState('base'); const [accountId,setAccountId]=useState(''); const [filter,setFilter]=useState('all'); const [query,setQuery]=useState('');
   const [upload,setUpload]=useState(false); const [rec,setRec]=useState(false); const [payment,setPayment]=useState(false); const [match,setMatch]=useState<BankTransaction|null>(null); const [split,setSplit]=useState<BankTransaction|null>(null);
   const accounts=data?.accounts||[]; const transactions=data?.transactions||[];
-  const selectedAccountId=accountId||accounts[0]?._id||'';
+  const defaultAccount = accounts.find(a => a.type === 'operating') || accounts.find(a => transactions.some(t => (typeof t.bankAccountId === 'object' ? t.bankAccountId?._id : t.bankAccountId) === a._id)) || accounts[0];
+  const selectedAccountId = accountId || defaultAccount?._id || '';
   const visible=transactions.filter(t=>(typeof t.bankAccountId==='object'?t.bankAccountId._id:t.bankAccountId)===selectedAccountId&&(filter==='all'||t.status===filter)&&t.description.toLowerCase().includes(query.toLowerCase()));
   const signed=(t:BankTransaction)=>t.direction==='debit'?-Math.abs(t.amountCents):Math.abs(t.amountCents);
   const cash=accounts.reduce((sum,a)=>sum+(a.currentBalanceCents??a.openingBalanceCents+transactions.filter(t=>(typeof t.bankAccountId==='object'?t.bankAccountId._id:t.bankAccountId)===a._id).reduce((s,t)=>s+signed(t),0)),0);

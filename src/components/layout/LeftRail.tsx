@@ -131,9 +131,9 @@ export function LeftRail({
       <footer>
         <BrandMark />
         <span>
-          DEMO ENVIRONMENT
+          DANDENONG HYUNDAI
           <br />
-          ILLUSTRATIVE DATA
+          37 LONSDALE STREET
         </span>
       </footer>
     </aside>
